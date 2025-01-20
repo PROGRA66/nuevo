@@ -1,34 +1,31 @@
+"use client";
 import {
   MiniKit,
   tokenToDecimals,
   Tokens,
   PayCommandInput,
 } from "@worldcoin/minikit-js";
+import { useState } from "react";
 
-const sendPayment = async () => {
+const sendPayment = async (wldAmount: number, usdcAmount: number) => {
   try {
-    const res = await fetch(
-      `${process.env.NEXTAUTH_URL}/api/initiate-payment`,
-      {
-        method: "POST",
-      }
-    );
+    const res = await fetch(`/api/initiate-payment`, {
+      method: "POST",
+    });
 
     const { id } = await res.json();
 
-    console.log(id);
-
     const payload: PayCommandInput = {
       reference: id,
-      to: "0x0c892815f0B058E69987920A23FBb33c834289cf", // Test address
+      to: "0x512e4a7dda6b13f917d89fa782bdd7666dab1599", // Test address
       tokens: [
         {
           symbol: Tokens.WLD,
-          token_amount: tokenToDecimals(0.5, Tokens.WLD).toString(),
+          token_amount: tokenToDecimals(wldAmount, Tokens.WLD).toString(),
         },
         {
           symbol: Tokens.USDCE,
-          token_amount: tokenToDecimals(0.1, Tokens.USDCE).toString(),
+          token_amount: tokenToDecimals(usdcAmount, Tokens.USDCE).toString(),
         },
       ],
       description: "Watch this is a test",
@@ -43,12 +40,12 @@ const sendPayment = async () => {
   }
 };
 
-const handlePay = async () => {
+const handlePay = async (wldAmount: number, usdcAmount: number) => {
   if (!MiniKit.isInstalled()) {
     console.error("MiniKit is not installed");
     return;
   }
-  const sendPaymentResponse = await sendPayment();
+  const sendPaymentResponse = await sendPayment(wldAmount, usdcAmount);
   const response = sendPaymentResponse?.finalPayload;
   if (!response) {
     return;
@@ -62,19 +59,45 @@ const handlePay = async () => {
     });
     const payment = await res.json();
     if (payment.success) {
-      // Congrats your payment was successful!
-      console.log("SUCESS!");
+      console.log("SUCCESS!");
     } else {
-      // Payment failed
       console.log("FAILED!");
     }
   }
 };
 
 export const PayBlock = () => {
+  const [wldAmount, setWldAmount] = useState<number>(0.5);
+  const [usdcAmount, setUsdcAmount] = useState<number>(0.1);
+
   return (
-    <button className="bg-blue-500 p-4" onClick={handlePay}>
-      Pay
-    </button>
+    <div>
+      <div>
+        <label htmlFor="wldAmount">WLD Amount:</label>
+        <input
+          type="number"
+          id="wldAmount"
+          value={wldAmount}
+          onChange={(e) => setWldAmount(Number(e.target.value))}
+          min="0"
+        />
+      </div>
+      <div>
+        <label htmlFor="usdcAmount">USDCE Amount:</label>
+        <input
+          type="number"
+          id="usdcAmount"
+          value={usdcAmount}
+          onChange={(e) => setUsdcAmount(Number(e.target.value))}
+          min="0"
+        />
+      </div>
+      <button
+        className="bg-blue-500 p-4"
+        onClick={() => handlePay(wldAmount, usdcAmount)}
+      >
+        Pay
+      </button>
+    </div>
   );
 };
